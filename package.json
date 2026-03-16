@@ -1,0 +1,17 @@
+{
+  "name": "mind-flow",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "start:api": "npm run start:dev -w apps/api",
+    "start:web": "npm run dev -w apps/web"
+  },
+  "dependencies": {
+    "@nestjs/swagger": "^11.2.6",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1"
+  }
+}
