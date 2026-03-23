@@ -1,21 +1,24 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config'; // Добавили ConfigService
 import { JournalModule } from './modules/journal/journal.module';
-import { User } from './modules/auth/user.entity';
-import {DiaryEntry} from "./modules/journal/diary-entry.entity";
 import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
-      port: 5433,
-      username: 'user',
-      password: 'password',
-      database: 'mindflow',
-      autoLoadEntities: true,
-      entities: [User, DiaryEntry],
+      port: 5432,
+      username: 'postgres',
+      password: '12345',
+      database: 'mind_flow',
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
     JournalModule,

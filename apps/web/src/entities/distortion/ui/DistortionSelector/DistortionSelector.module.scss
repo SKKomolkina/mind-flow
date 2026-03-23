@@ -1,0 +1,58 @@
+.wrapper {
+  margin: 2rem 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: #fff;
+  border: 2px solid #f0f0f0;
+  border-radius: 16px;
+  padding: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0; // Для начального состояния анимации GSAP
+
+  &:hover {
+    border-color: #a29bfe;
+    transform: translateY(-4px);
+  }
+
+  &.active {
+    border-color: #6c5ce7;
+    background: #f8f7ff;
+    box-shadow: 0 10px 20px rgba(108, 92, 231, 0.1);
+
+    .checkbox {
+      background: #6c5ce7;
+      border-color: #6c5ce7;
+    }
+  }
+
+  .checkbox {
+    min-width: 20px;
+    height: 20px;
+    border: 2px solid #d1d1d1;
+    border-radius: 6px;
+    transition: 0.2s;
+  }
+
+  h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #2d3436;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #636e72;
+    line-height: 1.4;
+  }
+}
