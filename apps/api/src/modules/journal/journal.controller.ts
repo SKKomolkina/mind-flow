@@ -55,4 +55,11 @@ export class JournalController {
     const user = req.user as any;
     return this.journalService.update(id, user.userId, updateData);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('stats')
+  async getStats(@Req() req: Request) {
+    const user = req.user as any;
+    return this.journalService.getStats(user.userId);
+  }
 }

@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react';
 import { journalApi } from '@/entities/journal/api/journalApi';
-import type { EmotionDefinition, CreateEntryPayload } from '@/entities/journal/api/journalApi';
+import type { EmotionDefinition } from '@/entities/journal/api/journalApi';
+
+// 1. СЛОВАРЬ МАРКЕРОВ
+const DISTORTION_MARKERS: Record<string, string[]> = {
+  'Сверхобобщение': ['всегда', 'никогда', 'вечно', 'постоянно', 'все', 'никто', 'каждый раз'],
+  'Все или ничего': ['плохо', 'идеально', 'ужасно', 'либо', 'или', 'крайне'],
+  'Негативный фильтр': ['плохое', 'ошибка', 'неудача', 'проблема'],
+  'Обесценивание положительного': ['просто повезло', 'пустяк', 'ничего особенного'],
+  'Поспешные выводы': ['точно знаю', 'он думает', 'они считают', 'уверена что'],
+  'Катастрофизация': ['кошмар', 'ужас', 'конец света', 'умру', 'катастрофа', 'невыносимо'],
+  'Эмоциональное обоснование': ['чувствую', 'кажется', 'ощущаю', 'мне так кажется'],
+  'Императивы': ['должен', 'обязан', 'надо', 'нужно', 'необходимо', 'придется'],
+  'Ярлыки': ['неудачник', 'глупый', 'дурак', 'идиот', 'тупица', 'слабак'],
+  'Вина': ['моя вина', 'виноват', 'из-за меня'],
+};
 
 interface DistortionDefinition {
   id: number;
@@ -15,8 +29,9 @@ interface Props {
 export const AddEntryForm = ({ onSuccess }: Props) => {
   const [step, setStep] = useState(1);
   const [emotionsLibrary, setEmotionsLibrary] = useState<EmotionDefinition[]>([]);
-
   const [distortionsLibrary, setDistortionsLibrary] = useState<DistortionDefinition[]>([]);
+
+  const [recommendations, setRecommendations] = useState<number[]>([]);
 
   const [formData, setFormData] = useState({
     situation: '',
@@ -31,9 +46,34 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
 
   useEffect(() => {
     journalApi.getEmotions().then(setEmotionsLibrary).catch(console.error);
-
     journalApi.getDistortions().then(setDistortionsLibrary).catch(console.error);
   }, []);
+
+  // ФУНКЦИЯ АНАЛИЗА (СППР)
+  const runTextAnalysis = (text: string) => {
+    const lowerText = text.toLowerCase();
+    const recommendedIds: number[] = [];
+
+    distortionsLibrary.forEach(dist => {
+      const markers = DISTORTION_MARKERS[dist.name];
+      if (markers && markers.some(marker => lowerText.includes(marker))) {
+        recommendedIds.push(dist.id);
+      }
+    });
+    setRecommendations(recommendedIds);
+  };
+
+  // Умная навигация
+  const handleNext = () => {
+    if (step === 1 && !formData.situation.trim()) return alert("Опишите ситуацию");
+    if (step === 3 && !formData.automaticThought.trim()) return alert("Запишите мысль");
+    if (step === 5 && !formData.rationalResponse.trim()) return alert("Сформулируйте ответ");
+
+    if (step === 3) {
+      runTextAnalysis(formData.automaticThought);
+    }
+    setStep(s => s + 1);
+  };
 
   const activeEmotionIds = Object.keys(emotionsValues).filter(id => emotionsValues[id].before > 0);
 
@@ -69,13 +109,10 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
       setStep(1);
       setEmotionsValues({});
       setFormData({
-        situation: '',
-        automaticThought: '',
-        beliefBefore: 50,
-        distortions: [],
-        rationalResponse: '',
-        beliefAfter: 20,
+        situation: '', automaticThought: '', beliefBefore: 50,
+        distortions: [], rationalResponse: '', beliefAfter: 20,
       });
+      setRecommendations([]); // Очистка рекомендаций
     } catch (err: any) {
       alert(err.response?.data?.message || 'Ошибка сохранения');
     }
@@ -87,7 +124,6 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
         <div className="bg-blue-600 h-full transition-all" style={{ width: `${(step / 6) * 100}%` }} />
       </div>
       <div className="p-10">
-        {/* Шаг 1: Ситуация */}
         {step === 1 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Что случилось?</h3>
@@ -97,7 +133,6 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
-        {/* Шаг 2: Эмоции */}
         {step === 2 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Эмоции «ДО»</h3>
@@ -122,7 +157,6 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
-        {/* Шаг 3: Мысль */}
         {step === 3 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Автоматическая мысль</h3>
@@ -137,38 +171,43 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
-        {/* Шаг 4: Искажения (ОБНОВЛЕННЫЙ) */}
         {step === 4 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Когнитивные искажения</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {distortionsLibrary.map(d => (
-                <button
-                  key={d.id}
-                  onClick={() => setFormData(p => ({
-                    ...p,
-                    // 5. Используем ID вместо имени для сравнения и сохранения
-                    distortions: p.distortions.includes(d.id)
-                      ? p.distortions.filter(x => x !== d.id)
-                      : [...p.distortions, d.id],
-                  }))}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    formData.distortions.includes(d.id)
-                      ? 'border-amber-400 bg-amber-50 shadow-inner'
-                      : 'bg-white border-slate-100'
-                  }`}
-                >
-                  <p className={`font-black uppercase text-[10px] ${formData.distortions.includes(d.id) ? 'text-amber-600' : 'text-slate-700'}`}>
-                    {d.name}
-                  </p>
-                  <p className="text-[9px] text-slate-400 leading-tight mt-1">{d.definition}</p>
-                </button>
-              ))}
+              {distortionsLibrary.map(d => {
+                const isRecommended = recommendations.includes(d.id);
+                const isSelected = formData.distortions.includes(d.id);
+
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => setFormData(p => ({
+                      ...p,
+                      distortions: isSelected ? p.distortions.filter(x => x !== d.id) : [...p.distortions, d.id],
+                    }))}
+                    className={`p-4 rounded-xl border-2 text-left transition-all relative ${
+                      isSelected ? 'border-amber-400 bg-amber-50 shadow-inner' :
+                        isRecommended ? 'border-blue-200 bg-blue-50' : 'bg-white border-slate-100'
+                    }`}
+                  >
+                    {isRecommended && !isSelected && (
+                      <span className="absolute -top-2 -right-1 bg-blue-600 text-white text-[7px] px-2 py-0.5 rounded-full font-black">
+                        AI ПОДСКАЗКА
+                      </span>
+                    )}
+
+                    <p className={`font-black uppercase text-[10px] ${isSelected ? 'text-amber-600' : 'text-slate-700'}`}>
+                      {d.name}
+                    </p>
+                    <p className="text-[9px] text-slate-400 leading-tight mt-1">{d.definition}</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Шаг 5: Ответ */}
         {step === 5 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Рациональный ответ</h3>
@@ -183,7 +222,6 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
-        {/* Шаг 6: Переоценка */}
         {step === 6 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Переоценка чувств</h3>
@@ -210,12 +248,17 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           <button onClick={() => setStep(s => s - 1)} disabled={step === 1}
                   className={`font-black uppercase text-[10px] ${step === 1 ? 'opacity-0' : 'text-slate-400'}`}>← Назад
           </button>
+
           {step < 6 ? (
-            <button onClick={() => setStep(s => s + 1)}
-                    className="px-10 py-3 bg-blue-600 text-white font-black uppercase text-[10px] rounded-xl shadow-lg shadow-blue-200">Далее →</button>
+            <button onClick={handleNext}
+                    className="px-10 py-3 bg-blue-600 text-white font-black uppercase text-[10px] rounded-xl shadow-lg shadow-blue-200">
+              Далее →
+            </button>
           ) : (
             <button onClick={handleSubmit}
-                    className="px-10 py-3 bg-green-600 text-white font-black uppercase text-[10px] rounded-xl shadow-lg shadow-green-200">Сохранить</button>
+                    className="px-10 py-3 bg-green-600 text-white font-black uppercase text-[10px] rounded-xl shadow-lg shadow-green-200">
+              Сохранить
+            </button>
           )}
         </div>
       </div>

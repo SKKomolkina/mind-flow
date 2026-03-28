@@ -6,13 +6,35 @@ services:
     container_name: mindflow_db
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mindflow
-    ports:
-      - "5433:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: mind_flow
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: ./apps/api
+    container_name: mindflow_api
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - ./apps/api/.env
+    environment:
+      # Эти переменные гарантируют, что NestJS увидит базу в сети Docker
+      - DB_HOST=db
+      - DATABASE_URL=postgresql://postgres:12345@db:5432/mind_flow
+    ports:
+      - "3000:3000"
+
+  web:
+    build: ./apps/web
+    container_name: mindflow_ui
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

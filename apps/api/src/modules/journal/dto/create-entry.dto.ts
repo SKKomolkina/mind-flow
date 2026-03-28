@@ -7,7 +7,8 @@ import {
   IsArray,
   MinLength,
   ValidateNested,
-  IsNotEmpty, IsNumber,
+  IsNotEmpty,
+  IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -62,4 +63,9 @@ export class CreateEntryDto {
   @ValidateNested({ each: true })
   @Type(() => EmotionInputDto)
   emotions?: EmotionInputDto[];
+
+  @IsArray()
+  @IsOptional()
+  @IsNumber({}, { each: true })
+  distortionIds?: number[];
 }

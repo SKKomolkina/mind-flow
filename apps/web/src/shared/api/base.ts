@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: '/api',
 });
 
 api.interceptors.request.use((config) => {
@@ -24,6 +24,6 @@ api.interceptors.response.use(
 );
 
 export const getDistortions = async () => {
-  const { data } = await api.get('/api/journal/distortions');
+  const { data } = await api.get('/journal/distortions');
   return data;
 };

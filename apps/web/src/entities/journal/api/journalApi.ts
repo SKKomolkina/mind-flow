@@ -47,4 +47,9 @@ export const journalApi = {
   },
 
   getDistortions: () => api.get('/journal/distortions').then(res => res.data),
+
+  getStats: async (): Promise<{ dynamics: any[], distortions: any[] }> => {
+    const response = await api.get('/journal/stats');
+    return response.data;
+  },
 };

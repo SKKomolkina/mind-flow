@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '@/shared/api/base.ts';
 
 export const LoginPage = () => {
@@ -90,9 +90,9 @@ export const LoginPage = () => {
 
           <p className="mt-8 text-center text-sm text-slate-500">
             Нет аккаунта?{' '}
-            <a href="#" className="font-bold text-blue-600 hover:text-blue-500 transition-colors">
+            <Link to="/registration" className="font-bold text-blue-600 hover:text-blue-500 transition-colors">
               Зарегистрироваться
-            </a>
+            </Link>
           </p>
         </div>
       </div>

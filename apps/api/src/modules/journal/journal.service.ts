@@ -32,16 +32,24 @@ export class JournalService implements OnModuleInit {
     if (count === 0) {
       const burnisEmotions = [
         { name: 'Грусть', subtext: 'уныние, депрессия, хандра' },
-        { name: 'Тревога', subtext: 'беспокойство, страх, паника, нервозность' },
+        {
+          name: 'Тревога',
+          subtext: 'беспокойство, страх, паника, нервозность',
+        },
         { name: 'Вина', subtext: 'стыд, угрызения совести, раскаяние' },
         { name: 'Злость', subtext: 'гнев, обида, раздражение, возмущение' },
         { name: 'Одиночество', subtext: 'изоляция, чувство заброшенности' },
         { name: 'Безнадежность', subtext: 'отчаяние, пессимизм' },
         { name: 'Смущение', subtext: 'неловкость, робость, замешательство' },
-        { name: 'Неполноценность', subtext: 'неуверенность в себе, чувство никчемности' },
+        {
+          name: 'Неполноценность',
+          subtext: 'неуверенность в себе, чувство никчемности',
+        },
         { name: 'Разочарование', subtext: 'досада, неоправданные ожидания' },
       ];
-      await this.emotionsRepository.save(this.emotionsRepository.create(burnisEmotions));
+      await this.emotionsRepository.save(
+        this.emotionsRepository.create(burnisEmotions),
+      );
       console.log('✅ Библиотека эмоций успешно инициализирована');
     }
   }
@@ -50,18 +58,57 @@ export class JournalService implements OnModuleInit {
     const count = await this.distortionRepository.count();
     if (count === 0) {
       const burnisDistortions = [
-        { name: 'Сверхобобщение', definition: 'Формулирование глобальных выводов на основе единичных случаев (маркеры: «всегда», «никогда»).' },
-        { name: 'Все или ничего', definition: 'Дихотомическое мышление, признающее только крайности.' },
-        { name: 'Негативный фильтр', definition: 'Концентрация исключительно на отрицательных деталях.' },
-        { name: 'Обесценивание положительного', definition: 'Игнорирование или обесценивание личных успехов и позитивного опыта.' },
-        { name: 'Поспешные выводы', definition: 'Включают «чтение мыслей» окружающих и «ошибку предсказания».' },
-        { name: 'Катастрофизация', definition: 'Преувеличение значимости проблем или преуменьшение важных фактов.' },
-        { name: 'Эмоциональное обоснование', definition: 'Принятие чувств за неоспоримые факты («я так чувствую, значит, это правда»).' },
-        { name: 'Императивы', definition: 'Использование слов-долженствований («должен», «обязан»).' },
-        { name: 'Ярлыки', definition: 'Наделение себя или других жесткими негативными характеристиками.' },
-        { name: 'Вина', definition: 'Необоснованный поиск виноватых вместо анализа причин.' },
+        {
+          name: 'Сверхобобщение',
+          definition:
+            'Формулирование глобальных выводов на основе единичных случаев (маркеры: «всегда», «никогда»).',
+        },
+        {
+          name: 'Все или ничего',
+          definition: 'Дихотомическое мышление, признающее только крайности.',
+        },
+        {
+          name: 'Негативный фильтр',
+          definition: 'Концентрация исключительно на отрицательных деталях.',
+        },
+        {
+          name: 'Обесценивание положительного',
+          definition:
+            'Игнорирование или обесценивание личных успехов и позитивного опыта.',
+        },
+        {
+          name: 'Поспешные выводы',
+          definition:
+            'Включают «чтение мыслей» окружающих и «ошибку предсказания».',
+        },
+        {
+          name: 'Катастрофизация',
+          definition:
+            'Преувеличение значимости проблем или преуменьшение важных фактов.',
+        },
+        {
+          name: 'Эмоциональное обоснование',
+          definition:
+            'Принятие чувств за неоспоримые факты («я так чувствую, значит, это правда»).',
+        },
+        {
+          name: 'Императивы',
+          definition:
+            'Использование слов-долженствований («должен», «обязан»).',
+        },
+        {
+          name: 'Ярлыки',
+          definition:
+            'Наделение себя или других жесткими негативными характеристиками.',
+        },
+        {
+          name: 'Вина',
+          definition: 'Необоснованный поиск виноватых вместо анализа причин.',
+        },
       ];
-      await this.distortionRepository.save(this.distortionRepository.create(burnisDistortions));
+      await this.distortionRepository.save(
+        this.distortionRepository.create(burnisDistortions),
+      );
       console.log('✅ Справочник когнитивных искажений инициализирован');
     }
   }
@@ -82,7 +129,9 @@ export class JournalService implements OnModuleInit {
       distortions,
     });
 
-    const savedEntry = (await this.journalRepository.save(entry)) as unknown as DiaryEntry;
+    const savedEntry = (await this.journalRepository.save(
+      entry,
+    )) as unknown as DiaryEntry;
 
     if (emotions && Array.isArray(emotions)) {
       const emotionEntities = emotions.map((emo) =>
@@ -91,7 +140,7 @@ export class JournalService implements OnModuleInit {
           intensityAfter: emo.intensityAfter,
           entry: savedEntry,
           emotion: { id: emo.emotionId } as any,
-        })
+        }),
       );
       await this.entryEmotionsRepository.save(emotionEntities);
     }
@@ -121,12 +170,18 @@ export class JournalService implements OnModuleInit {
     await this.journalRepository.remove(entry);
   }
 
-  async update(id: string, userId: string, updateData: any): Promise<DiaryEntry> {
+  async update(
+    id: string,
+    userId: string,
+    updateData: any,
+  ): Promise<DiaryEntry> {
     const { distortionIds, ...rest } = updateData;
     const entry = await this.findOne(id, userId);
 
     if (distortionIds) {
-      entry.distortions = await this.distortionRepository.findBy({ id: In(distortionIds) });
+      entry.distortions = await this.distortionRepository.findBy({
+        id: In(distortionIds),
+      });
     }
 
     Object.assign(entry, rest);
@@ -137,5 +192,36 @@ export class JournalService implements OnModuleInit {
     return this.distortionRepository.find({
       order: { id: 'ASC' },
     });
+  }
+
+  async getStats(userId: string) {
+    const entries = await this.journalRepository.find({
+      where: { user: { id: userId } },
+      relations: ['distortions'],
+      order: { createdAt: 'ASC' },
+    });
+
+    const dynamics = entries.map((entry) => ({
+      date: new Date(entry.createdAt).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+      }),
+      before: entry.beliefBefore,
+      after: entry.beliefAfter,
+    }));
+
+    const distortionMap: Record<string, number> = {};
+    entries.forEach((entry) => {
+      entry.distortions.forEach((d) => {
+        distortionMap[d.name] = (distortionMap[d.name] || 0) + 1;
+      });
+    });
+
+    const distortions = Object.entries(distortionMap).map(([name, value]) => ({
+      name,
+      value,
+    }));
+
+    return { dynamics, distortions };
   }
 }
