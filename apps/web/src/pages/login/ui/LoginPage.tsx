@@ -38,7 +38,7 @@ export const LoginPage = () => {
           С возвращением
         </h2>
         <p className="mt-2 text-sm text-slate-500 font-medium">
-          Продолжайте ваш путь к осознанности в Mind-Flow
+          Ваш путь к осознанности в Mind-Flow
         </p>
       </div>
 

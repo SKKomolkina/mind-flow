@@ -2,18 +2,35 @@ import { useEffect, useState } from 'react';
 import { journalApi } from '@/entities/journal/api/journalApi';
 import type { EmotionDefinition } from '@/entities/journal/api/journalApi';
 
-// 1. СЛОВАРЬ МАРКЕРОВ
+const stemRussianWord = (word: string): string => {
+  let w = word.toLowerCase().replace(/ё/g, 'е');
+
+  const REFLEXIVE = /ся$|сь$/;
+  const ADJECTIVAL = /ая$|ее$|ею$|еи$|ие$|ий$|их$|ые$|ыый$|ых$|ое$|ою$|ую$|яя$|ями$|ыми$|ого$|его$|ому$|ему$/;
+  const VERB = /аю$|ет$|ете$|ем$|ут$|ют$|ешь$|у$|ю$|ла$|ло$|ли$|л$|ть$|нно$/;
+  const NOUN = /а$|ев$|ов$|е$|и$|ий$|ия$|ы$|ь$|ями$|ами$|ах$|о$|у$|ом$|ем$|ию$|ей$|ой$|иям$/;
+  const DERIVATIONAL = /ост$|ость$/;
+
+  w = w.replace(REFLEXIVE, '');
+  w = w.replace(ADJECTIVAL, '');
+  w = w.replace(VERB, '');
+  w = w.replace(NOUN, '');
+  w = w.replace(DERIVATIONAL, '');
+
+  return w;
+};
+
 const DISTORTION_MARKERS: Record<string, string[]> = {
-  'Сверхобобщение': ['всегда', 'никогда', 'вечно', 'постоянно', 'все', 'никто', 'каждый раз'],
-  'Все или ничего': ['плохо', 'идеально', 'ужасно', 'либо', 'или', 'крайне'],
-  'Негативный фильтр': ['плохое', 'ошибка', 'неудача', 'проблема'],
-  'Обесценивание положительного': ['просто повезло', 'пустяк', 'ничего особенного'],
-  'Поспешные выводы': ['точно знаю', 'он думает', 'они считают', 'уверена что'],
-  'Катастрофизация': ['кошмар', 'ужас', 'конец света', 'умру', 'катастрофа', 'невыносимо'],
-  'Эмоциональное обоснование': ['чувствую', 'кажется', 'ощущаю', 'мне так кажется'],
-  'Императивы': ['должен', 'обязан', 'надо', 'нужно', 'необходимо', 'придется'],
-  'Ярлыки': ['неудачник', 'глупый', 'дурак', 'идиот', 'тупица', 'слабак'],
-  'Вина': ['моя вина', 'виноват', 'из-за меня'],
+  'Сверхобобщение': ['всегд', 'никогд', 'вечн', 'постоянн', 'все', 'никт', 'кажд'],
+  'Все или ничего': ['плох', 'идеальн', 'ужасн', 'либ', 'ил', 'крайн'],
+  'Негативный фильтр': ['плох', 'ошибк', 'неудач', 'проблем'],
+  'Обесценивание положительного': ['везл', 'пустяк', 'ничег', 'особен'],
+  'Поспешные выводы': ['точн', 'дума', 'счита', 'уверен'],
+  'Катастрофизация': ['кошмар', 'ужас', 'конец', 'умр', 'катастроф', 'невыносим'],
+  'Эмоциональное обоснование': ['чувству', 'кажет', 'ощуща', 'мн'],
+  'Императивы': ['долж', 'обязан', 'над', 'необходим', 'прид'],
+  'Ярлыки': ['неудачник', 'глуп', 'дурак', 'идиот', 'тупиц', 'слабак'],
+  'Вина': ['вин', 'виноват'],
 };
 
 interface DistortionDefinition {
@@ -49,21 +66,24 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
     journalApi.getDistortions().then(setDistortionsLibrary).catch(console.error);
   }, []);
 
-  // ФУНКЦИЯ АНАЛИЗА (СППР)
   const runTextAnalysis = (text: string) => {
-    const lowerText = text.toLowerCase();
+    if (!text || !text.trim()) return;
+
+    const tokens = text.toLowerCase().match(/[а-яё]+/g) || [];
+
+    const stemmedUserWords = tokens.map(token => stemRussianWord(token));
     const recommendedIds: number[] = [];
 
     distortionsLibrary.forEach(dist => {
       const markers = DISTORTION_MARKERS[dist.name];
-      if (markers && markers.some(marker => lowerText.includes(marker))) {
+      if (markers && markers.some(marker => stemmedUserWords.includes(marker))) {
         recommendedIds.push(dist.id);
       }
     });
+
     setRecommendations(recommendedIds);
   };
 
-  // Умная навигация
   const handleNext = () => {
     if (step === 1 && !formData.situation.trim()) return alert("Опишите ситуацию");
     if (step === 3 && !formData.automaticThought.trim()) return alert("Запишите мысль");
@@ -106,13 +126,15 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
 
       await journalApi.create(payload);
       onSuccess();
+
+      // Сброс ДКА в начальное состояние
       setStep(1);
       setEmotionsValues({});
       setFormData({
         situation: '', automaticThought: '', beliefBefore: 50,
         distortions: [], rationalResponse: '', beliefAfter: 20,
       });
-      setRecommendations([]); // Очистка рекомендаций
+      setRecommendations([]);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Ошибка сохранения');
     }
@@ -120,10 +142,13 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
 
   return (
     <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl mb-12 overflow-hidden">
+      {/* Прогресс-бар выполнения этапов ДКА */}
       <div className="h-1 bg-slate-100">
         <div className="bg-blue-600 h-full transition-all" style={{ width: `${(step / 6) * 100}%` }} />
       </div>
       <div className="p-10">
+
+        {/* Шаг 1: Фиксация ситуации */}
         {step === 1 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Что случилось?</h3>
@@ -133,6 +158,7 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
+        {/* Шаг 2: Оценка первичных эмоций */}
         {step === 2 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Эмоции «ДО»</h3>
@@ -157,6 +183,7 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
+        {/* Шаг 3: Вербализация автоматической мысли */}
         {step === 3 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Автоматическая мысль</h3>
@@ -171,6 +198,7 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
+        {/* Шаг 4: Идентификация искажений (Интеграция подсказок СППР) */}
         {step === 4 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Когнитивные искажения</h3>
@@ -182,6 +210,7 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
                 return (
                   <button
                     key={d.id}
+                    type="button"
                     onClick={() => setFormData(p => ({
                       ...p,
                       distortions: isSelected ? p.distortions.filter(x => x !== d.id) : [...p.distortions, d.id],
@@ -191,8 +220,9 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
                         isRecommended ? 'border-blue-200 bg-blue-50' : 'bg-white border-slate-100'
                     }`}
                   >
+                    {/* Условный рендеринг интеллектуальной AI-подсказки */}
                     {isRecommended && !isSelected && (
-                      <span className="absolute -top-2 -right-1 bg-blue-600 text-white text-[7px] px-2 py-0.5 rounded-full font-black">
+                      <span className="absolute -top-2 -right-1 bg-blue-600 text-white text-[7px] px-2 py-0.5 rounded-full font-black animate-pulse">
                         AI ПОДСКАЗКА
                       </span>
                     )}
@@ -208,6 +238,7 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
+        {/* Шаг 5: Формирование адаптивного ответа */}
         {step === 5 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Рациональный ответ</h3>
@@ -222,6 +253,7 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
           </div>
         )}
 
+        {/* Шаг 6: Итоговая переоценка состояния */}
         {step === 6 && (
           <div>
             <h3 className="text-2xl font-black mb-6">Переоценка чувств</h3>
@@ -245,17 +277,17 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
         )}
 
         <div className="flex justify-between mt-10 pt-6 border-t border-slate-100">
-          <button onClick={() => setStep(s => s - 1)} disabled={step === 1}
+          <button type="button" onClick={() => setStep(s => s - 1)} disabled={step === 1}
                   className={`font-black uppercase text-[10px] ${step === 1 ? 'opacity-0' : 'text-slate-400'}`}>← Назад
           </button>
 
           {step < 6 ? (
-            <button onClick={handleNext}
+            <button type="button" onClick={handleNext}
                     className="px-10 py-3 bg-blue-600 text-white font-black uppercase text-[10px] rounded-xl shadow-lg shadow-blue-200">
               Далее →
             </button>
           ) : (
-            <button onClick={handleSubmit}
+            <button type="button" onClick={handleSubmit}
                     className="px-10 py-3 bg-green-600 text-white font-black uppercase text-[10px] rounded-xl shadow-lg shadow-green-200">
               Сохранить
             </button>

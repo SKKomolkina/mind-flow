@@ -19,12 +19,10 @@ export const DistortionSelector: React.FC<Props> = ({ selectedDistortions, onCha
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Загружаем данные из БД
     getDistortions().then(setDistortions);
   }, []);
 
   useEffect(() => {
-    // Анимация GSAP: карточки «всплывают» по очереди
     if (distortions.length > 0) {
       gsap.fromTo(
         `.${styles.card}`,
