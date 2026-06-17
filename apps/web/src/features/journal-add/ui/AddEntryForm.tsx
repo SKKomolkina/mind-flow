@@ -6,7 +6,7 @@ const stemRussianWord = (word: string): string => {
   let w = word.toLowerCase().replace(/ё/g, 'е');
 
   const REFLEXIVE = /ся$|сь$/;
-  const ADJECTIVAL = /ая$|ее$|ею$|еи$|ие$|ий$|их$|ые$|ыый$|ых$|ое$|ою$|ую$|яя$|ями$|ыми$|ого$|его$|ому$|ему$/;
+  const ADJECTIVAL = /ая$|ее$|ею$|еи$|ие$|ий$|их$|ые$|ый$|ых$|ое$|ою$|ую$|яя$|ями$|ыми$|ого$|его$|ому$|ему$/;
   const VERB = /аю$|ет$|ете$|ем$|ут$|ют$|ешь$|у$|ю$|ла$|ло$|ли$|л$|ть$|нно$/;
   const NOUN = /а$|ев$|ов$|е$|и$|ий$|ия$|ы$|ь$|ями$|ами$|ах$|о$|у$|ом$|ем$|ию$|ей$|ой$|иям$/;
   const DERIVATIONAL = /ост$|ость$/;
@@ -76,7 +76,7 @@ export const AddEntryForm = ({ onSuccess }: Props) => {
 
     distortionsLibrary.forEach(dist => {
       const markers = DISTORTION_MARKERS[dist.name];
-      if (markers && markers.some(marker => stemmedUserWords.includes(marker))) {
+      if (markers && markers.some(marker => stemmedUserWords.some(word => word.startsWith(marker)))) {
         recommendedIds.push(dist.id);
       }
     });
